@@ -113,6 +113,9 @@ venv.bak/
 # !.vscode/launch.json
 # !.vscode/extensions.json
 
+## Support Files ##
+csv/
+
 # Spyder project settings
 .spyderproject
 .spyproject

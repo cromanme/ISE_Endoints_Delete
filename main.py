@@ -16,24 +16,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 __status__ = "Development"  # Prototype, Development or Production
 
+import sys
+from getpass import getpass
 import tools
 
-ise_host = "10.122.176.10"
-ise_user = "apiadmin"
-ise_passwd = "Ise1234!"
+print()
+ise_host = input("ISE PAN IP: ")
+ise_user = input("ERS User: ")
+ise_passwd = getpass("Password: ")
 HEADERS = {
         'Accept': "application/json",
         'Content-Type': "application/json",
 }
-filename = "cvs/endpoint.csv"
-uri = "https://10.122.176.10:9060/ers/config/endpoint/"
+filename = "csv/endpoints.csv"
+uri = "https://"+ise_host+":9060/ers/config/endpoint/"
+
+print()
+if not tools.is_valid_ip(ise_host):
+    sys.exit(f"Invalid IP Address: '{ise_host}'")
 
 data = tools.open_csv(filename)
 
 for row in data:
     mac = row["MAC"]
     if tools.verify_mac(mac):
-        endpoint_id = tools.get_endpoint_id(mac,ise_user,ise_passwd,HEADERS)
+        endpoint_id = tools.get_endpoint_id(uri,mac,ise_user,ise_passwd,HEADERS)
     else:
         print("Invalid MAC Address")
         continue
@@ -42,4 +49,4 @@ for row in data:
             print("Succcesfully deleted MAC Address:",mac)
     else:
         print("MAC Address:",mac," is not in the database")
-print("Script completed successfully")
+print("\nScript completed successfully\n")

@@ -19,6 +19,7 @@ __status__ = "Development"  # Prototype, Development or Production
 import json
 import requests
 import warnings
+import ipaddress
 import sys
 import csv
 import re
@@ -27,7 +28,15 @@ import os
 requests.packages.urllib3.disable_warnings()
 
 def _get(uri,username,password,HEADERS):
-    response = requests.get(url=uri, auth=(username,password), headers=HEADERS, verify=False)
+    try:
+        response = requests.get(url=uri, auth=(username,password), headers=HEADERS, verify=False, timeout=5)
+    except requests.exceptions.Timeout as e: 
+        print()
+        print("+-----------------------------+")
+        print("Error Connection Timeout")
+        print("+-----------------------------+")
+        sys.exit()
+    
     if response.ok:
         data = response.json()
     else:
@@ -44,12 +53,16 @@ def verify_mac(mac):
     else:
         return False
 
-def get_endpoint_id(mac,username,password,HEADERS):
-    uri = "https://10.122.176.10:9060/ers/config/endpoint/name/" + mac
-    data = _get(uri,username,password,HEADERS)
+def get_endpoint_id(uri,mac,username,password,HEADERS):
+    url = uri + "name/" + mac
+    data = _get(url,username,password,HEADERS)
     if data == 404:
         endpoint_id = None
-    else:    
+    elif data == 401 or data == 403:
+        sys.exit("Credentials are invalid\n")
+    elif data == 400:
+        sys.exit("Bad Request, please verify IP Address\n")    
+    else:        
         endpoint_id = data.get("ERSEndPoint").get("id")
     return endpoint_id
 
@@ -65,3 +78,12 @@ def open_csv(filepath):
     except OSError as e:
         print(e)
         sys.exit(f"File '{filepath}' was not found!")
+
+def is_valid_ip(ipv4):
+    """Tests to see if provided value is valid IPv4 or IPv6."""
+    try:
+        ipaddress.ip_address(ipv4)
+    except ValueError:
+        return False
+    else:
+        return True
